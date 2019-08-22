@@ -3,11 +3,11 @@
 #someOtherfoler/
 
 # Assembly
-.bin
-.hex
-.obj
-.lst
-.sym
+*.bin
+*.hex
+*.obj
+*.lst
+*.sym
 
 # Compiled source #
 ###################
