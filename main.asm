@@ -1,24 +1,29 @@
 		.orig x3000
 BEGIN		ld r6 , SCOPE_STACK		; load initial stack pointer
 		ld r5 , DATA_STACK		; load initial frame pointer
-		br MAIN
+		br MAIN_MSG
 
 SCOPE_STACK    	.fill x4000
 DATA_STACK	.fill x5000
 N_STORE		.blkw 1
-N_LOW		.fill #15
-N_HIGH		.fill #30
 M		.fill #4
-MSG_ERROR_N     .stringz "\nError: 15 <= N <= 30"
+
 MSG_ENTER_N	.stringz "\nFirst enter N"
 
-		lea r0 , MSG_ENTER_N
+MAIN_MSG	lea r0 , MSG_ENTER_N
 		puts
 MAIN		jsr INPUT
 		jsr CHECK_N
 		st r4 , N_STORE
 		br INPUT_N_DONE
 
+INPUT_N_DONE	lea r0 , MSG_N_DONE
+		puts
+MENU		lea r0 , MSG_MENU
+		puts
+		MSG_MENU .stringz "\n1 N again\n2 Higher value\n3 Descending Sort\n4 Halt"					;
+		halt	; end program
+		MSG_N_DONE .stringz "\nN ok!"
 
 INPUT		; subroutine, leaves stuff in r4
 		; push r7 so we dont lose where we came from
@@ -90,7 +95,7 @@ ACCUM		; accumulate, check overflow in each step
 		
 		; check overflow for bubblesort-comparisons
 		add r1 , r4 , r4 ; 2 times the number have to be representable
-		brn OVERFLOW
+		brn OVERFLOW_BUBBLE
 
 		br INPUT_I
 		
@@ -105,9 +110,6 @@ OVERFLOW_BUBBLE lea r0 , MSG_B_OVERFLOW
 		MSG_B_OVERFLOW .stringz "\nOverflow for comparison, try with a lower number."
 		puts
 		br INPUT_NO_PUSH
-NOT_IN_RANGE	lea r0 , MSG_ERROR_N
-		puts
-		br MAIN
 		
 INPUT_READY	; pop r7 to return (pop stack)
 		
@@ -150,19 +152,19 @@ CHECK_N		; check range for N
 		add r7 , r1 , #0
 		; else we are ready to go
 		ret
+N_LOW		.fill #15
+N_HIGH		.fill #30
+
+NOT_IN_RANGE	lea r0 , MSG_ERROR_N
+		puts
+		br MAIN
+MSG_ERROR_N     .stringz "\nError: 15 <= N <= 30"
 
 NEGATE_R1	; places in r1 the 2complement of r1
 		not r1 , r1
 		add r1 , r1 , #1
 		ret
-		
-INPUT_N_DONE	lea r0 , MSG_N_DONE
-		puts
-MENU		lea r0 , MSG_MENU
-		puts
-		MSG_MENU .stringz "\n1 N again\n2 Higher value\n3 Descending Sort\n4 Halt"					;
-		halt	; end program
-		MSG_N_DONE .stringz "\nN ok!"
+
 
 ;LIFO STACK uses r1 as auxiliar register
 PUSH_R1_SCOPE	;r6 is used as stack register
