@@ -7,6 +7,9 @@ SCOPE_STACK    	.fill x4000
 DATA_STACK	.fill x5000
 N_STORE		.blkw 1
 M		.fill #4
+DATA_STORE 	.blkw #30
+N_LOW		.fill #15
+N_HIGH		.fill #30
 
 MSG_ENTER_N	.stringz "\nFirst enter N"
 
@@ -152,8 +155,7 @@ CHECK_N		; check range for N
 		add r7 , r1 , #0
 		; else we are ready to go
 		ret
-N_LOW		.fill #15
-N_HIGH		.fill #30
+
 
 NOT_IN_RANGE	lea r0 , MSG_ERROR_N
 		puts
