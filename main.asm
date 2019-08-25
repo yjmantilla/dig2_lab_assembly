@@ -4,7 +4,7 @@ BEGIN		ld r6 , SCOPE_STACK		; load initial stack pointer
 		br MAIN_MSG
 
 SCOPE_STACK    	.fill x4000
-DATA_STACK	.fill x4100
+DATA_STACK	.fill x4100 ; for op manipulation?
 N_STORE		.blkw 1
 M		.fill #4
 DATA_STORE 	.blkw #31 ; because push pushes in the next
@@ -33,9 +33,9 @@ INPUT_N_DONE	lea r0 , MSG_N_OK
 		MSG_N_OK .stringz "\nN ok!"
 MENU		lea r0 , MSG_MENU	;Shows menu and ask for option
 		puts
-		MSG_MENU .stringz "\n\nMENU\n\n1 N again\n2 Higher value\n3 Descending Sort\n4 Halt\n\nEnter op."
+		MSG_MENU .stringz "\n\nMENU\n\n1 N again\n2 Higher value\n3 Descending Sort\n4 MUL 4?\n5 Halt\n\nEnter op."
 		jsr INPUT	; r4 now has option
-		add r1 , r4 , #-4
+		add r1 , r4 , #-5
 		brz EXIT
 		add r1 , r4 , #-1
 		brz MAIN_MSG
@@ -43,6 +43,8 @@ MENU		lea r0 , MSG_MENU	;Shows menu and ask for option
 		brz HIGH_VAL
 		add r1 , r4 , #-3
 		brz SORT
+		add r1 , r4 , #-4
+		brz MUL_4
 		; else invalid option
 		br WHAT	
 WHAT		lea r0 , MSG_WHAT
@@ -52,7 +54,7 @@ WHAT		lea r0 , MSG_WHAT
 EXIT		halt	; end program
 HIGH_VAL	halt
 SORT		halt
-		
+MUL_4		halt		
 ENTER_NUM	;let r3 be the counter
 		ld r3 , N_STORE
 		lea r5 , DATA_STORE
@@ -225,51 +227,5 @@ PUSH_R1_DATA	;r5 us used as stack register
 		ret
 POP_R1_DATA	ldr r1 , r5 , #0
 		add r5 , r5 ,#-1
-; Multiplies two integers.
-;
-; Preconditions: The number in R1 is multiplied with the number in R2.
-; Postconditions: The number in R1 will be the product.
-;
-MUL	ST R0, MUL_R0
-	ST R2, MUL_R2
-	ST R3, MUL_R3
-	AND R3, R3, #0	; R3 holds flag for negative
-	ADD R1, R1, #0
-	BRn MUL_NEG_1	; If operand 1 is negative, flip flag
-MUL_CHECK_NEG_2
-	ADD R2, R2, #0
-	BRn MUL_NEG_2	; And if operand 2 is negative
-MUL_POST_CHECK_NEG	; Now we know our arguments are positive
-	AND R0, R0, #0	; R0 holds original number (absolute value)
-	ADD R0, R0, R1
-	AND R1, R1, #0	; R1 to 0 so adding R0 R2 times gives correct result
-	BRnzp MUL_LOOP
-MUL_NEG_1 ; First operand is negative
-	NOT R3, R3	; Negative flag is negative when answer is negative
-	NOT R1, R1	; Negate operand 1 (both numbers must be positive)
-	ADD R1, R1, #1
-	BRnzp MUL_CHECK_NEG_2
-MUL_NEG_2 ; Second operand is negative
-	NOT R3, R3
-	NOT R2, R2	; Negate operand 2
-	ADD R2, R2, #1
-	BRnzp MUL_POST_CHECK_NEG
-MUL_LOOP
-	ADD R2, R2, #-1
-	BRn MUL_POST_LOOP
-	ADD R1, R1, R0	; Add R1 to itself (original saved in R0) R2 times
-	BRnzp MUL_LOOP
-MUL_POST_LOOP
-	ADD R3, R3, #0
-	BRzp MUL_CLEANUP	; If negative flag not set
-	NOT R1, R1		; If it is, negate answer
-	ADD R1, R1, #1
-MUL_CLEANUP
-	LD R0, MUL_R0
-	LD R2, MUL_R2
-	LD R3, MUL_R3
-	RET
-MUL_R0	.FILL 0
-MUL_R2	.FILL 0
-MUL_R3	.FILL 0
+
 .end
