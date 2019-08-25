@@ -44,7 +44,7 @@ MENU		lea r0 , MSG_MENU	;Shows menu and ask for option
 		add r1 , r4 , #-3
 		brz SORT
 		; else invalid option
-		br MENU	
+		br WHAT	
 WHAT		lea r0 , MSG_WHAT
 		puts
 		MSG_WHAT .stringz "\nWrong Input!"
