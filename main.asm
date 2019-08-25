@@ -10,7 +10,6 @@ M		.fill #4
 DATA_STORE 	.blkw #31 ; because push pushes in the next
 
 
-
 MSG_ENTER_N	.stringz "\n\nFirst enter N"
 MSG_ENTER_NUM	.stringz "\n\nEnter nums"
 
@@ -24,7 +23,7 @@ MAIN		jsr INPUT
 NUM_DONE	lea r0 , MSG_NUM_OK
 		puts	
 		br MENU
-		MSG_NUM_OK .stringz "\nNum ok!"
+		MSG_NUM_OK .stringz "\nNums ok!"
 INPUT_N_DONE	lea r0 , MSG_N_OK
 		puts
 		lea r0, MSG_ENTER_NUM
@@ -54,7 +53,36 @@ WHAT		lea r0 , MSG_WHAT
 EXIT		halt	; end program
 HIGH_VAL	halt
 SORT		halt
-MUL_4		halt		
+
+MUL_4		lea r0 , MSG_MUL4
+		puts
+		lea r5 DATA_STORE
+		add r5 , r5 , #1
+		and r3 , r3 , #0		; will be a counter
+		ld  r1 , N_STORE
+		jsr NEGATE_R1
+		add r4 , r1 , 0
+MUL_4_LOOP	ldr r1 , r5 , #0
+		add r5 , r5 , #1		
+		and r1 , r1 , x0003	; mask with last 3 bits
+		;add r1 , r1 , #-4	; multiple of 4 if zero
+		brz IS_MUL
+CONT_M4		add r3 , r3 , #1
+		add r1 , r3 , r4
+		brz MUL_4_DONE
+		br MUL_4_LOOP
+		
+IS_MUL		lea r0 , MSG_NL
+		puts
+		add r0 , r3 , #15	; convert  counter to ascii
+		add r0 , r0 , #15
+		add r0 , r0 , #15
+		add r0 , r0 , #3
+		out
+		br CONT_M4
+MUL_4_DONE	br MENU
+MSG_NL .stringz " "
+MSG_MUL4 .stringz "\n MUL4: \n"		
 ENTER_NUM	;let r3 be the counter
 		ld r3 , N_STORE
 		lea r5 , DATA_STORE
@@ -70,7 +98,7 @@ NOT_IN_RANGE	lea r0 , MSG_ERROR_N
 		br MAIN
 MSG_ERROR_N     .stringz "\nError: 15 <= N <= 30"
 N_LOW		.fill #1 ;15
-N_HIGH		.fill #3 ;30
+N_HIGH		.fill #30 ;30
 CHECK_N		; check range for N
 		; assumes N in r4
 		add r1 , r7 , #0
