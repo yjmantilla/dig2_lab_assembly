@@ -10,25 +10,48 @@ M		.fill #4
 DATA_STORE 	.blkw #31 ; because push pushes in the next
 
 
-MSG_ENTER_N	.stringz "\nFirst enter N"
-MSG_ENTER_NUM	.stringz "\nEnter nums"
+
+MSG_ENTER_N	.stringz "\n\nFirst enter N"
+MSG_ENTER_NUM	.stringz "\n\nEnter nums"
+
+
 MAIN_MSG	lea r0 , MSG_ENTER_N
 		puts
 MAIN		jsr INPUT
 		jsr CHECK_N
 		st r4 , N_STORE
 		br INPUT_N_DONE
-NUM_DONE	br MENU
-INPUT_N_DONE	lea r0 , MSG_N_DONE
+NUM_DONE	lea r0 , MSG_NUM_OK
+		puts	
+		br MENU
+		MSG_NUM_OK .stringz "\nNum ok!"
+INPUT_N_DONE	lea r0 , MSG_N_OK
 		puts
 		lea r0, MSG_ENTER_NUM
 		puts
 		br ENTER_NUM
-		MSG_N_DONE .stringz "\nN ok!"
-MENU		lea r0 , MSG_MENU
+		MSG_N_OK .stringz "\nN ok!"
+MENU		lea r0 , MSG_MENU	;Shows menu and ask for option
 		puts
-		MSG_MENU .stringz "\n1 N again\n2 Higher value\n3 Descending Sort\n4 Halt"					;
-		halt	; end program
+		MSG_MENU .stringz "\n\nMENU\n\n1 N again\n2 Higher value\n3 Descending Sort\n4 Halt\n\nEnter op."
+		jsr INPUT	; r4 now has option
+		add r1 , r4 , #-4
+		brz EXIT
+		add r1 , r4 , #-1
+		brz MAIN_MSG
+		add r1 , r4 , #-2
+		brz HIGH_VAL
+		add r1 , r4 , #-3
+		brz SORT
+		; else invalid option
+		br MENU	
+WHAT		lea r0 , MSG_WHAT
+		puts
+		MSG_WHAT .stringz "\nWrong Input!"
+		br MENU	
+EXIT		halt	; end program
+HIGH_VAL	halt
+SORT		halt
 		
 ENTER_NUM	;let r3 be the counter
 		ld r3 , N_STORE
@@ -40,7 +63,31 @@ ENTER_NUM_LOOP	add r3 , r3 , #-1
 		jsr PUSH_R1_DATA
 		br ENTER_NUM_LOOP				
 		
+NOT_IN_RANGE	lea r0 , MSG_ERROR_N
+		puts
+		br MAIN
+MSG_ERROR_N     .stringz "\nError: 15 <= N <= 30"
+N_LOW		.fill #1 ;15
+N_HIGH		.fill #3 ;30
+CHECK_N		; check range for N
+		; assumes N in r4
+		add r1 , r7 , #0
+		jsr PUSH_R1_SCOPE
+		
+		ld r1 , N_LOW
+		jsr NEGATE_R1
+		add r1 , r4 , r1
+		brn NOT_IN_RANGE
 
+		ld r1 , N_HIGH
+		jsr NEGATE_R1
+		add r1 , r4 , r1
+		brp NOT_IN_RANGE
+		
+		jsr POP_R1_SCOPE
+		add r7 , r1 , #0
+		; else we are ready to go
+		ret
 
 INPUT		; subroutine, leaves stuff in r4
 		; push r7 so we dont lose where we came from
@@ -150,33 +197,11 @@ YES_ENTER 	; if enter was first char, it will just assume thats a 0
 DONT_NEGATE	add r4 , r1 , #0
 		br INPUT_READY
 
-N_LOW		.fill #15
-N_HIGH		.fill #30
-CHECK_N		; check range for N
-		; assumes N in r4
-		add r1 , r7 , #0
-		jsr PUSH_R1_SCOPE
-		
-		ld r1 , N_LOW
-		jsr NEGATE_R1
-		add r1 , r4 , r1
-		brn NOT_IN_RANGE
-
-		ld r1 , N_HIGH
-		jsr NEGATE_R1
-		add r1 , r4 , r1
-		brp NOT_IN_RANGE
-		
-		jsr POP_R1_SCOPE
-		add r7 , r1 , #0
-		; else we are ready to go
-		ret
 
 
-NOT_IN_RANGE	lea r0 , MSG_ERROR_N
-		puts
-		br MAIN
-MSG_ERROR_N     .stringz "\nError: 15 <= N <= 30"
+
+
+
 
 NEGATE_R1	; places in r1 the 2complement of r1
 		not r1 , r1
