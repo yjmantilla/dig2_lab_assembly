@@ -63,9 +63,9 @@ MUL_4		lea r0 , MSG_MUL4
 		jsr NEGATE_R1
 		add r4 , r1 , 0
 MUL_4_LOOP	ldr r1 , r5 , #0
-		add r5 , r5 , #1		
-		and r1 , r1 , x0003	; mask with last 3 bits
-		;add r1 , r1 , #-4	; multiple of 4 if zero
+		add r5 , r5 , #1
+		; multiples of 4 finish in 00		
+		and r1 , r1 , x0003	; mask with last 2 bits
 		brz IS_MUL
 CONT_M4		add r3 , r3 , #1
 		add r1 , r3 , r4
