@@ -2,7 +2,7 @@
 ld r0 , num
 jsr DISPD
 halt
-num .fill #-10000
+num .fill #8192
 ;
 ; Takes a 2's complement integer and displays its DECIMAL representation.
 ;
