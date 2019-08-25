@@ -12,7 +12,7 @@ MULLOOP ADD     R0,R0,R1      ; R0 ==  R0+R1
         BRp     MULLOOP
         ST      R0,RESULT     ; MEM == R0
         HALT
-VALUE1  .FILL   x2            ; Hex 2.
-VALUE2  .FILL   x5            ; Hex 5.
+VALUE1  .FILL   #1            ; Hex 2.
+VALUE2  .FILL   #-2            ; Hex 5.
 RESULT  .BLKW   1      
         .END
