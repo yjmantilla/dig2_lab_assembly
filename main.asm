@@ -1,13 +1,9 @@
 		.orig x3000
 BEGIN		ld r6 , SCOPE_STACK		; load initial stack pointer
-		ld r5 , DATA_STACK		; load initial frame pointer
 		br MAIN_MSG
 
 SCOPE_STACK    	.fill x4000
-DATA_STACK	.fill x4100 ; for op manipulation?
-N_STORE		.blkw 1
-M		.fill #4
-DATA_STORE 	.blkw #31 ; because push pushes in the next
+
 
 
 MSG_ENTER_N	.stringz "\n\nFirst enter N"
@@ -41,7 +37,7 @@ MENU		lea r0 , MSG_MENU	;Shows menu and ask for option
 		add r1 , r4 , #-2
 		brz HIGH_VAL
 		add r1 , r4 , #-3
-		brz SORT
+		brz SORT_OPT
 		add r1 , r4 , #-4
 		brz MUL_4
 		; else invalid option
@@ -50,9 +46,69 @@ WHAT		lea r0 , MSG_WHAT
 		puts
 		MSG_WHAT .stringz "\nWrong Input!"
 		br MENU	
+
+
 EXIT		halt	; end program
-HIGH_VAL	halt
-SORT		halt
+HIGH_VAL	lea r0 MSG_HIGH
+		puts
+		MSG_HIGH .stringz "\nHIGH VAL:"
+		jsr SORT
+		;show only first pos
+		and r4 , r4 , #0
+		add r4 , r4 , #1 ; only one
+		jsr SHOW_PREP
+		br MENU
+		
+SORT_OPT	lea r0 MSG_SORT
+		puts
+		MSG_SORT .stringz "\nDES.SORT:"
+		jsr SORT
+		ld r4 , N_STORE ; so SHOW_PREP knows how many to show
+		jsr SHOW_PREP
+		br MENU
+		
+SORT		ld r4 , N_STORE
+		
+OUTERLOOP	add r4, r4, #-1 ; r4 counter outer loop
+		brnz SORTED
+		add r5, r4, #0	; r5 counter inner loop
+		lea r3 , DATA_STORE
+		add r3 , r3 , #1 ; is the next because of the push
+INNERLOOP	LDR     R1, R3, #0  
+      		LDR     R2, R3, #1  
+       		NOT     R6, R2       
+        	ADD     R6, R6, #1  
+         	ADD     R6, R1, R6  ; swap = item - next item
+		BRP    SWAPPED     
+          	STR     R2, R3, #0  
+           	STR     R1, R3, #1  
+SWAPPED   	ADD     R3, R3, #1  
+           	ADD     R5, R5, #-1 
+          	BRP     INNERLOOP   
+         	BRNZP   OUTERLOOP 
+  
+SORTED		ret
+
+		
+SHOW_PREP	; Needs r3 with address of data array
+		; Needs r4 with N
+		add r1 , r7 , #0
+		jsr PUSH_R1_SCOPE		
+		lea r3 , DATA_STORE		; r3 <- address of data 
+		add r3 , r3 , #1
+SHOW_LOOP	lea r0 , MSG_NL
+		puts
+		add r4, r4, #-1		
+		brn SHOW_END	
+		ldr r0, r3, #0
+		
+		jsr DISPD
+		add r3, r3, #1
+		br SHOW_LOOP
+
+SHOW_END 	jsr POP_R1_SCOPE
+		add r7 , r1 , #0
+		ret		
 
 MUL_4		lea r0 , MSG_MUL4
 		puts
@@ -79,7 +135,11 @@ IS_MUL		lea r0 , MSG_NL
 		br CONT_M4
 MUL_4_DONE	br MENU
 MSG_NL .stringz " "
-MSG_MUL4 .stringz "\n MUL4: \n"		
+MSG_MUL4 .stringz "\n MUL4: \n"	
+
+
+
+	
 ENTER_NUM	;let r3 be the counter
 		ld r3 , N_STORE
 		lea r5 , DATA_STORE
@@ -88,11 +148,18 @@ ENTER_NUM_LOOP	add r3 , r3 , #-1
 		jsr INPUT
 		add r1 , r4 , #0
 		jsr PUSH_R1_DATA
-		br ENTER_NUM_LOOP				
+		br ENTER_NUM_LOOP
+
+				
 		
 NOT_IN_RANGE	lea r0 , MSG_ERROR_N
 		puts
 		br MAIN
+
+N_STORE		.blkw 1
+M		.fill #4
+DATA_STORE 	.blkw #31 ; because push pushes in the next
+
 MSG_ERROR_N     .stringz "\nError: 15 <= N <= 30"
 N_LOW		.fill #1 ;15
 N_HIGH		.fill #30 ;30
