@@ -161,7 +161,7 @@ M		.fill #4
 DATA_STORE 	.blkw #31 ; because push pushes in the next
 
 MSG_ERROR_N     .stringz "\nError: 15 <= N <= 30"
-N_LOW		.fill #1 ;15
+N_LOW		.fill #15 ;15
 N_HIGH		.fill #30 ;30
 CHECK_N		; check range for N
 		; assumes N in r4
