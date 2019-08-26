@@ -51,7 +51,7 @@ WHAT		lea r0 , MSG_WHAT
 EXIT		halt	; end program
 HIGH_VAL	lea r0 MSG_HIGH
 		puts
-		MSG_HIGH .stringz "\nHIGH VAL:"
+		MSG_HIGH .stringz "\nHIGH VAL:\n"
 		jsr SORT
 		;show only first pos
 		and r4 , r4 , #0
@@ -61,7 +61,7 @@ HIGH_VAL	lea r0 MSG_HIGH
 		
 SORT_OPT	lea r0 MSG_SORT
 		puts
-		MSG_SORT .stringz "\nDES.SORT:"
+		MSG_SORT .stringz "\nDES.SORT:\n"
 		jsr SORT
 		ld r4 , N_STORE ; so SHOW_PREP knows how many to show
 		jsr SHOW_PREP
@@ -332,9 +332,11 @@ POP_R1_DATA	ldr r1 , r5 , #0
 ;
 DISPD	ADD R0, R0, #0
 	BRnp DISPD_NON_ZERO
+	add r2, r7, #0 ; store home
 	LD R0, DISPD_0
 	OUT
-	RET
+	add r7, r2, #0
+	ret
 DISPD_NON_ZERO
 	ST R0, DISPD_R0
 	ST R1, DISPD_R1
