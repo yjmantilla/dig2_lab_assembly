@@ -12,7 +12,7 @@
 ; Count the number of items to be sorted and store the value in R7
 
             AND     R2, R2, #0  ; Initialize R2 <- 0 (counter)
-            LD      R3, FILE    ; Put file pointer into R3
+            Lea      R3, FILE    ; Put file pointer into R3
 COUNT       LDR     R0, R3, #0  ; Put next file item into R0
             BRZ     END_COUNT   ; Loop until file item is 0
             ADD     R3, R3, #1  ; Increment file pointer
@@ -26,7 +26,7 @@ END_COUNT   ADD     R4, R2, #0  ; Store total items in R4 (outer loop count)
 OUTERLOOP   ADD     R4, R4, #-1 ; loop n - 1 times
             BRNZ    SORTED      ; Looping complete, exit
             ADD     R5, R4, #0  ; Initialize inner loop counter to outer
-            LD      R3, FILE    ; Set file pointer to beginning of file
+            Lea     R3, FILE    ; Set file pointer to beginning of file
 INNERLOOP   LDR     R0, R3, #0  ; Get item at file pointer
             LDR     R1, R3, #1  ; Get next item
             NOT     R2, R1      ; Negate ...
@@ -41,5 +41,23 @@ SWAPPED     ADD     R3, R3, #1  ; Increment file pointer
             BRNZP   OUTERLOOP   ; End of outer loop
 SORTED      HALT
 
-FILE        .FILL   x3500       ; File location
-            .END
+FILE        
+.FILL #16384
+.FILL #-16383
+.FILL #-3276
+.FILL #3276
+.FILL #16
+.FILL #-3
+.FILL #4
+.FILL #-4
+.fill #0
+.FILL #16383
+.FILL #-16383
+.FILL #-3276
+.FILL #3276
+.FILL #16
+.FILL #-3
+.FILL #4
+.FILL #-4
+.fill #0
+.END
