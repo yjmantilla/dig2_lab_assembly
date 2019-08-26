@@ -256,8 +256,11 @@ ACCUM		; accumulate, check overflow in each step
 		brn OVERFLOW_BUBBLE
 
 		; check overflow for ascii display
-		add r1 , r1 , r1 ;
-		brn OVERFLOW
+		add r1 , r1 , r1 ; 4 times the number has to be representable
+		; actually this is a bit too harsh, it will pass up to 8192
+		; but the disp code admits up to 9999
+		; currently trying to improve ascii conversion subroutine 
+		brn OVERFLOW_ASCII
 
 		br INPUT_I
 		
@@ -272,7 +275,10 @@ OVERFLOW_BUBBLE lea r0 , MSG_B_OVERFLOW
 		MSG_B_OVERFLOW .stringz "\nOverflow for comparison, try with a lower number."
 		puts
 		br INPUT_NO_PUSH
-		
+OVERFLOW_ASCII	lea r0 , MSG_A_OVERFLOW
+		MSG_A_OVERFLOW .stringz "\nOverflow for ASCII decimal representation,try with a lower number."
+		puts
+		br INPUT_NO_PUSH		
 INPUT_READY	; pop r7 to return (pop stack)
 		
 		jsr POP_R1_SCOPE
@@ -323,59 +329,65 @@ PUSH_R1_DATA	;r5 us used as stack register
 		ret
 POP_R1_DATA	ldr r1 , r5 , #0
 		add r5 , r5 ,#-1
+
+; Following subroutines are from https://github.com/jrcurtis/lc3/blob/master/tests/lab5.asm
 ;
 ; Takes a 2's complement integer and displays its DECIMAL representation.
 ;
 ; THIS FUNCTION IS DIRECTLY DERIVED FROM DISPLAY ABOVE.
 ; THE ONLY MODIFICATION IS SIMPLIFIED OUTPUT. THE ALGORITHM IS THE SAME.
 ; BLOCK COMMENTS HAVE BEEN REMOVED FOR REDUNDANCY AND SPACE SAVING.
-;
-DISPD	ADD R0, R0, #0
+; THIS EXPECTS IN R0 THE NUMBER TO BE DISPLAYED
+
+DISPD	ADD R0, R0, #0		; to assert if the number is not zero
 	BRnp DISPD_NON_ZERO
-	add r2, r7, #0 ; store home
-	LD R0, DISPD_0
-	OUT
-	add r7, r2, #0
+	add r2, r7, #0 		; store home
+	LD R0, DISPD_0		; load 0 in ascii
+	OUT			; display to console
+	add r7, r2, #0		; load r7 again to return
 	ret
 DISPD_NON_ZERO
-	ST R0, DISPD_R0
+	; PREPARATION
+	ST R0, DISPD_R0		; store original value of registers
 	ST R1, DISPD_R1
 	ST R2, DISPD_R2
 	ST R3, DISPD_R3
 	ST R4, DISPD_R4
 	ST R5, DISPD_R5
 	ST R7, DISPD_R7
-	AND R1, R1, #0	; R1 holds current multiple of ten
-	ADD R1, R1, #1
-	AND R2, R2, #0	; R2 used by multiply and divide routines
-	ADD R2, R2, #1
+	AND R1, R1, #0	; clear r1
+	ADD R1, R1, #1	; R1 holds current multiple of ten
+	AND R2, R2, #0	; clear r2
+	ADD R2, R2, #1	; R2 used by multiply and divide routines
 	AND R3, R3, #0	; R3 holds current power of ten
 	AND R4, R4, #0	; R4 holds plurality of current multiple
 	AND R5, R5, #0	; R5 holds original number from R0
-	ADD R5, R5, R0	; (R0 needed for output)
-	BRzp DISPD_LOOP_ASC
-	NOT R5, R5
+	ADD R5, R5, R0	; (because R0 needed for output)
+	BRzp DISPD_LOOP_ASC ; assert number is not negative
+	NOT R5, R5	; if it is negate it
 	ADD R5, R5, #1	; Negate to positive
 	LD R0, DISPD_NEG	; Input is negative. Display negative sign.
-	OUT
+	OUT		; Now we may continue with de ascending loop
 DISPD_LOOP_ASC
-	AND R1, R1, #0
+	AND R1, R1, #0	; clear r1
 	ADD R1, R1, R5	; Set R1 to number
+			; first cycle do note that r2 = 1
 	JSR DIV		; How many times does ten*x go into number?
-	BRz DISPD_LOOP_DESC	; If zero, then exit loop
-	AND R1, R1, #0		; Otherwise, keep multiplying
-	ADD R1, R1, #10
+	BRz DISPD_LOOP_DESC	; If zero, then exit loop , here r3 is max power of 10 + 1 and r2 is 10 to that power (overshoots)
+	AND R1, R1, #0		; Otherwise, keep multiplying, clear r1
+	ADD R1, R1, #10		; set r1 to 10
 	JSR MUL		; Highest multiple of ten up by one
+			; first cycle r1 <= r1=10 * r2=1
 	ADD R3, R3, #1	; One more power of ten
-	AND R2, R2, #0
-	ADD R2, R2, R1	; Store in R2 for next loop
+	AND R2, R2, #0	; clear r2
+	ADD R2, R2, R1	; Store mul result in R2 for next loop, it is 10 to the power
 	BRnzp DISPD_LOOP_ASC
-DISPD_LOOP_DESC
-	AND R1, R1, #0
+DISPD_LOOP_DESC		; by here r2 and r3 are overshooting (1 more power than it is actually)
+	AND R1, R1, #0	; clear r1
 	ADD R1, R1, R2	; Here R1 is current multiple of ten we're looking at
 	LD R4, DISPD_0
 DISPD_LOOP_DESC_AGAIN
-	AND R2, R2, #0
+	AND R2, R2, #0	; clear r2
 	ADD R2, R2, #10	; And R2 is used by DIV, 10 as we're moving down
 	JSR DIV		; Divide our multiple of ten by ten
 	ADD R3, R3, #-1	; One less power of ten
@@ -385,7 +397,7 @@ DISPD_LOOP_DESC_AGAIN
 	ADD R1, R1, R5	; So we get our input number in R1 (dividend)
 	JSR DIV		; And see how many times the one fits in the other
 ; Here is where we actually display something
-	ADD R0, R1, R4
+	ADD R0, R1, R4	; ascii 0 + offset of the number
 	OUT
 	JSR MUL		; Multiply power of ten by result of integer division
 	NOT R1, R1

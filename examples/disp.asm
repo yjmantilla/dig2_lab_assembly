@@ -12,9 +12,11 @@ num .fill #8192
 ;
 DISPD	ADD R0, R0, #0
 	BRnp DISPD_NON_ZERO
+	add r2, r7, #0 ; store home
 	LD R0, DISPD_0
 	OUT
-	RET
+	add r7, r2, #0
+	ret
 DISPD_NON_ZERO
 	ST R0, DISPD_R0
 	ST R1, DISPD_R1
