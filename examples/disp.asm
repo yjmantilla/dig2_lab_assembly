@@ -2,7 +2,7 @@
 ld r0 , num
 jsr DISPD
 halt
-num .fill #8192
+num .fill #-32768
 ;
 ; Takes a 2's complement integer and displays its DECIMAL representation.
 ;
@@ -42,25 +42,23 @@ DISPD_LOOP_ASC
 	AND R1, R1, #0
 	ADD R1, R1, R5	; Set R1 to number
 	JSR DIV		; How many times does ten*x go into number?
-	BRz DISPD_LOOP_DESC	; If zero, then exit loop
+	add r1, r1, #-10
+	BRn DISPD_LOOP_DESC	; If negative, then exit loop
 	AND R1, R1, #0		; Otherwise, keep multiplying
 	ADD R1, R1, #10
 	JSR MUL		; Highest multiple of ten up by one
 	ADD R3, R3, #1	; One more power of ten
 	AND R2, R2, #0
 	ADD R2, R2, R1	; Store in R2 for next loop
-	BRnzp DISPD_LOOP_ASC
+	BR DISPD_LOOP_ASC
 DISPD_LOOP_DESC
 	AND R1, R1, #0
 	ADD R1, R1, R2	; Here R1 is current multiple of ten we're looking at
 	LD R4, DISPD_0
 DISPD_LOOP_DESC_AGAIN
 	AND R2, R2, #0
-	ADD R2, R2, #10	; And R2 is used by DIV, 10 as we're moving down
-	JSR DIV		; Divide our multiple of ten by ten
-	ADD R3, R3, #-1	; One less power of ten
-	AND R2, R2, #0
 	ADD R2, R2, R1	; Now we have a multiple of ten in R2 (divisor)
+	add r6, r2, #0
 	AND R1, R1, #0
 	ADD R1, R1, R5	; So we get our input number in R1 (dividend)
 	JSR DIV		; And see how many times the one fits in the other
@@ -73,9 +71,14 @@ DISPD_LOOP_DESC_AGAIN
 	ADD R5, R5, R1	; And subtract it from input number
 	ADD R3, R3, #0	; If power of ten is zero
 	BRz DISPD_END	; then we've output the last digit
-	AND R1, R1, #0
-	ADD R1, R1, R2	; Put multiple of ten in R1 for beginning of loop
-	BRnzp DISPD_LOOP_DESC_AGAIN
+	and r1 , r1, x0000;
+	add r1 , r2, #0
+	AND R2, R2, #0
+	ADD R2, R2, #10	; And R2 is used by DIV, 10 as we're moving down
+	JSR DIV		; Divide our multiple of ten by ten
+	ADD R3, R3, #-1	; One less power of ten
+
+	BR DISPD_LOOP_DESC_AGAIN
 DISPD_END
 	LD R0, DISPD_R0
 	LD R1, DISPD_R1

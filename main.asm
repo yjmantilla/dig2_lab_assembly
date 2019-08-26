@@ -256,11 +256,13 @@ ACCUM		; accumulate, check overflow in each step
 		brn OVERFLOW_BUBBLE
 
 		; check overflow for ascii display
-		add r1 , r1 , r1 ; 4 times the number has to be representable
+		;add r1 , r1 , r1 ; 4 times the number has to be representable
 		; actually this is a bit too harsh, it will pass up to 8192
 		; but the disp code admits up to 9999
-		; currently trying to improve ascii conversion subroutine 
-		brn OVERFLOW_ASCII
+		; currently trying to improve ascii conversion subroutine
+		; done this no longer necessary
+		; ascci conversion works up to 32767 
+		;brn OVERFLOW_ASCII
 
 		br INPUT_I
 		
@@ -341,10 +343,10 @@ POP_R1_DATA	ldr r1 , r5 , #0
 
 DISPD	ADD R0, R0, #0		; to assert if the number is not zero
 	BRnp DISPD_NON_ZERO
-	add r2, r7, #0 		; store home
+	ST r7, DISPD_R7			; store home
 	LD R0, DISPD_0		; load 0 in ascii
 	OUT			; display to console
-	add r7, r2, #0		; load r7 again to return
+	LD R7, DISPD_R7		; load r7 again to return
 	ret
 DISPD_NON_ZERO
 	; PREPARATION
@@ -368,12 +370,14 @@ DISPD_NON_ZERO
 	ADD R5, R5, #1	; Negate to positive
 	LD R0, DISPD_NEG	; Input is negative. Display negative sign.
 	OUT		; Now we may continue with de ascending loop
-DISPD_LOOP_ASC
+DISPD_LOOP_ASC		; this loop is to find the largest power of 10 used by the number
+			; but it actually overshoots...
 	AND R1, R1, #0	; clear r1
 	ADD R1, R1, R5	; Set R1 to number
 			; first cycle do note that r2 = 1
 	JSR DIV		; How many times does ten*x go into number?
-	BRz DISPD_LOOP_DESC	; If zero, then exit loop , here r3 is max power of 10 + 1 and r2 is 10 to that power (overshoots)
+	add r1,r1,#-10
+	BRn DISPD_LOOP_DESC	; If zero, then exit loop , here r3 is max power of 10 + 1 and r2 is 10 to that power (overshoots)
 	AND R1, R1, #0		; Otherwise, keep multiplying, clear r1
 	ADD R1, R1, #10		; set r1 to 10
 	JSR MUL		; Highest multiple of ten up by one
@@ -381,17 +385,13 @@ DISPD_LOOP_ASC
 	ADD R3, R3, #1	; One more power of ten
 	AND R2, R2, #0	; clear r2
 	ADD R2, R2, R1	; Store mul result in R2 for next loop, it is 10 to the power
-	BRnzp DISPD_LOOP_ASC
+	BR DISPD_LOOP_ASC
 DISPD_LOOP_DESC		; by here r2 and r3 are overshooting (1 more power than it is actually)
 	AND R1, R1, #0	; clear r1
 	ADD R1, R1, R2	; Here R1 is current multiple of ten we're looking at
 	LD R4, DISPD_0
 DISPD_LOOP_DESC_AGAIN
 	AND R2, R2, #0	; clear r2
-	ADD R2, R2, #10	; And R2 is used by DIV, 10 as we're moving down
-	JSR DIV		; Divide our multiple of ten by ten
-	ADD R3, R3, #-1	; One less power of ten
-	AND R2, R2, #0
 	ADD R2, R2, R1	; Now we have a multiple of ten in R2 (divisor)
 	AND R1, R1, #0
 	ADD R1, R1, R5	; So we get our input number in R1 (dividend)
@@ -405,9 +405,15 @@ DISPD_LOOP_DESC_AGAIN
 	ADD R5, R5, R1	; And subtract it from input number
 	ADD R3, R3, #0	; If power of ten is zero
 	BRz DISPD_END	; then we've output the last digit
-	AND R1, R1, #0
-	ADD R1, R1, R2	; Put multiple of ten in R1 for beginning of loop
-	BRnzp DISPD_LOOP_DESC_AGAIN
+	AND r1, r1, x0000
+	add r1, r2, #0
+	and r2,r2,#0
+	add r2,r2,#10
+	jsr DIV	; Divide our multiple of ten by ten
+	; result is already in r1 for beginning of the loop
+	add r3, r3, #-1
+	
+	BR DISPD_LOOP_DESC_AGAIN
 DISPD_END
 	LD R0, DISPD_R0
 	LD R1, DISPD_R1
